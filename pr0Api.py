@@ -26,7 +26,8 @@ class Api:
             
         })
         if  startItemID:
-            args[0]["older"]=startItemID
+#             print (args)
+            args["older"]=startItemID
         
         
         # Make the request and verify success.
