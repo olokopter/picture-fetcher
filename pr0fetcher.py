@@ -5,10 +5,22 @@ from io import BytesIO
 from resizeimage import resizeimage
 import numpy as np
 import pickle
+import os
+
+import time
+
+
+
 THUMBURL = "http://thumb.pr0gramm.com/"
 def main():
     lastID = None 
-    for iRedo in range(0,5):
+    startUp = True
+    start_time = time.time()
+    numberOfPictures = 0
+    saveStr = "save"
+    max_file_size = 1 #in MB 
+    for iRedo in range(0,500):
+        
         api = pr0Api.Api()
         api.enableNSFW()
         api.enableSFW()
@@ -16,14 +28,17 @@ def main():
         all_images = []
         test_counter = 0
         label = []
-        lastID = resultJSON[-1]["id"]
-        print(lastID)
+        lastID = resultJSON[-1]["promoted"]
+#         print(lastID)
+#         print(len(resultJSON))
+        numberOfPictures+=len(resultJSON)
+        print ("Fetching the next "+str(len(resultJSON)))
         for item in resultJSON:
     #         print(item)
             response = requests.get(THUMBURL+item["thumb"])
             img = Image.open(BytesIO(response.content))
             img = resizeimage.resize_cover(img, [32, 32], validate=False)
-            img.save(str(item["id"])+".jpeg", img.format)
+#             img.save(str(item["id"])+".jpeg", img.format)
             pixels = img.load()
             all_array = []
             redPixels= []
@@ -47,14 +62,30 @@ def main():
             all_array.extend(bluePixels)
             all_images.append(all_array)
             test_counter+=1
-            if test_counter>10:
-                break
-    
-    np_imgarray = np.array(all_images,dtype=np.uint8)
-    np_label = np.array(label,dtype=np.uint8)
-    dump_dict = {"data":np_imgarray,"labels":np_label}
-    pickle.dump( dump_dict, open( "save.p", "wb" ) )
+#             if test_counter>10:
+#                 break
+        print ("Fetched",numberOfPictures,"in total")
+        print("--- %s needed seconds ---" % (time.time() - start_time))
+
+        np_imgarray = np.array(all_images,dtype=np.uint8)
+        np_label = np.array(label,dtype=np.uint8)
+        dump_dict = {"data":np_imgarray,"labels":np_label}
         
+        
+        if startUp:
+            pickle.dump( dump_dict, open( saveStr+".p", "wb" ) )
+            startUp=False
+        else:
+            pickle.dump( dump_dict, open( saveStr+".p", "ab" ) )
+        statinfo = os.stat(saveStr+".p")
+        
+        file_size = statinfo.st_size/1e+6
+        print ("filesize",file_size)
+        if file_size > max_file_size :
+            saveStr = saveStr+str(iRedo)
+            print("Filesize larger than ",max_file_size,"starting new file: ",saveStr)
+            
+            startUp=True
 #         input("next")
     
 #     print(resultJSON)
