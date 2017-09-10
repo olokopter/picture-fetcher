@@ -79,7 +79,7 @@ def main():
             pickle.dump( dump_dict, open( saveStr+".p", "ab" ) )
         statinfo = os.stat(saveStr+".p")
         
-        file_size = statinfo.st_size/1e+6
+        file_size = statinfo.st_size/300e+6
         print ("filesize",file_size)
         if file_size > max_file_size :
             saveStr = saveStr+str(iRedo)
